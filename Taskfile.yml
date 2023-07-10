@@ -1,20 +1,53 @@
-version: '3'
+version: "3"
 
 tasks:
-  install_brew:
-    desc: Install brew
-    cmds:
-      - |
-        if ! [ -x "$(command -v brew)" ]; then
-          echo "Installing brew"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        fi
-    silent: true
-
   install:
     desc: Install tools
-    deps:
-      - task: install_brew
     cmds:
-      - brew install zsh-autosuggestions
+      - |
+        if ! [ -x "$(command -v trash)" ]; then
+          echo "Installing trash"
+          brew install --HEAD macmade/tap/trash
+        fi
+      - |
+        if ! [ -x "$(command -v exa)" ]; then
+          echo "Installing exa"
+          brew install exa
+        fi
+      - |
+        if ! [ -x "$(command -v bat)" ]; then
+          echo "Installing bat"
+          brew install bat
+        fi
+      - |
+        if ! [ -x "$(command -v zoxide)" ]; then
+          echo "Installing zoxide"
+          brew install zoxide
+        fi
+      - |
+        if ! [ -x "$(command -v rg)" ]; then
+          echo "Installing ripgrep"
+          brew install ripgrep
+        fi
+      - |
+        if ! [ -x "$(command -v fzf)" ]; then
+          echo "Installing fzf"
+          brew install fzf && $(brew --prefix)/opt/fzf/install
+        fi
+      - |
+        if ! [ -x "$(command -v gsed)" ]; then
+          echo "Installing gnu-sed"
+          brew install gnu-sed
+        fi
+      - |
+        if ! [ -x "$(command -v starship)" ]; then
+          echo "Installing starship"
+          brew install starship
+        fi
+      - |
+        if ! [ -x "$(command -v atuin)" ]; then
+          echo "Installing atuin"
+          brew install atuin
+        fi
+      - echo "Done. Please restart your shell!"
     silent: true
