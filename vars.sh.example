@@ -1,12 +1,16 @@
 #!/bin/sh
-
+# Only accept github at this moment, so you do not need to overwrite this value
 GIT_PROVIDER=
 GIT_USERNAME=
 GIT_EMAIL=
 SSH_DIR=
-SSH_KEY_FILE=
+SSH_KEY_FILENAME=
 SSH_KEY_PASSPHRASE=
 GPG_REAL_NAME=
 GPG_EMAIL=
 GPG_EXPIRATION=
+# Get from gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d '/' -f 2
 GPG_KEY_ID=
+# Chezmoi dotfiles git repository URL
+CHEZMOI_REPO=
+DISABLED_FEATURES=("gpg_key" "github_gpg_key" "dotfiles")

@@ -20,6 +20,7 @@ warn() { color "${YELLOW}" "${1}"; }
 # Feature flags
 FEATURE_GPG_KEY="gpg_key"
 FEATURE_GITHUB_GPG_KEY="github_gpg_key"
+FEATURE_DOT_FILES="dotfiles"
 
 # GPG hard coded configurations
 GPG_KEY_TYPE="rsa"
@@ -32,7 +33,7 @@ GPG_SUBKEY_LENGTH="4096"
 is_empty() {
   VALUE=$1
   VARIABLE_NAME=$2
-  ([[ -z "${VALUE}" ]] && echo "$(warn "${VARIABLE_NAME}") is required." && return 1) || return 0
+  ([[ -z "${VALUE}" ]] && echo "$(warn "${VARIABLE_NAME}") $(error 'is required.')" && return 1) || return 0
 }
 
 is_contain() {
@@ -243,6 +244,23 @@ configure_github_gpg_key() {
   git config --global commit.gpgSign true
 }
 
+configure_dot_files() {
+  ! [[ -x "$(command -v chezmoi)" ]] && (info "Installing chezmoi" && brew install chezmoi)
+  if [[ -z "${CHEZMOI_REPO}" ]]; then
+    if [[ "${GIT_PROVIDER}" == "github" ]]; then
+      CHEZMOI_REPO="https://github.com/$GIT_USERNAME/dotfiles.git"
+    fi
+  fi
+
+  if [[ -z "${CHEZMOI_REPO}" ]]; then
+    echo "$(warn 'CHEZMOI_REPO') $(error 'is required.')"
+    exit 1
+  fi
+
+  info "Checking out your configuration..."
+  chezmoi init --apply "${CHEZMOI_REPO}"
+}
+
 main() {
   load_variables
   if is_contain "$@" "--check"; then
@@ -273,6 +291,10 @@ main() {
     if ! is_contain "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && ! is_contain "${DISABLED_FEATURES}" "${FEATURE_GITHUB_GPG_KEY}"; then
       configure_github_gpg_key
     fi
+  fi
+
+  if ! is_contain "${DISABLED_FEATURES}" "${FEATURE_DOT_FILES}"; then
+    configure_dot_files
   fi
 
   info "Bootstrapping is finished. Exiting..."
