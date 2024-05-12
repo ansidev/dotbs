@@ -100,7 +100,7 @@ configure_ssh_files() {
   configure_ssh_config_files
 }
 
-configure_ssh_key() {
+configure_ssh() {
   configure_ssh_files
 
   if [[ ! -f "${SSH_KEY_FILE}" ]]; then
@@ -243,7 +243,7 @@ main() {
   ensure_file_exists "${HOME}/.zshrc"
   modify_oneline_config 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' "${HOME}/.zshrc"
 
-  configure_ssh_key
+  configure_ssh
   if ! is_contains "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && [[ -z ${GPG_KEY_ID} ]]; then
     configure_gpg_key
   fi
