@@ -43,6 +43,10 @@ ensure_file_exists() {
   FILE=$1; [[ ! -f "${FILE}" ]] && (info "Creating empty file ${FILE}" && touch "${FILE}")
 }
 
+ensure_dir_exists() {
+  DIR=$1; [[ ! -d "${DIR}" ]] && (info "Creating empty directory ${DIR}" && mkdir -p "${DIR}")
+}
+
 modify_oneline_config() {
   CONFIG=$1
   CONFIG_FILE=$2

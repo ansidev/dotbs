@@ -46,6 +46,38 @@ EOF
   fi
 }
 
+configure_gpg() {
+  local GPG_CONFIG_DIR="${HOME}/.gnupg"
+  local GPG_CONFIG_FILE="${GPG_CONFIG_DIR}/gpg.conf"
+  local GPG_AGENT_CONFIG_FILE="${GPG_CONFIG_DIR}/gpg-agent.conf"
+  info "Configuring GPG"
+  brew install gnupg pinentry-mac
+
+  ensure_dir_exists "${GPG_CONFIG_DIR}"
+  ensure_file_exists "${GPG_CONFIG_FILE}"
+  ensure_file_exists "${GPG_AGENT_CONFIG_FILE}"
+
+  modify_oneline_config 'use-agent' "${GPG_CONFIG_FILE}"
+
+  modify_oneline_config "pinentry-program ${BREW_PREFIX}/bin/pinentry" "${GPG_AGENT_CONFIG_FILE}"
+  modify_oneline_config 'default-cache-ttl 34560000' "${GPG_AGENT_CONFIG_FILE}"
+  modify_oneline_config 'max-cache-ttl 34560000' "${GPG_AGENT_CONFIG_FILE}"
+
+  local GPG_CONFIG_START_COMMENT="# GPG_CONFIG - START"
+  local GPG_CONFIG_END_COMMENT="# GPG_CONFIG - END"
+  if grep -q -e "${GPG_CONFIG_START_COMMENT}" -e "${GPG_CONFIG_END_COMMENT}" "${ZSHRC_CONFIG_FILE}"; then
+    warn "GPG configurations already exist. Skipping..."
+  else
+    cat <<EOF >> "${ZSHRC_CONFIG_FILE}"
+
+${GPG_CONFIG_START_COMMENT}
+export GPG_TTY=\$(tty)
+gpgconf --launch gpg-agent
+${GPG_CONFIG_END_COMMENT}
+EOF
+  fi
+}
+
 configure_eza() {
   info "Configuring eza"
   brew install eza
@@ -152,18 +184,20 @@ configure_macos_preferences() {
 
 main() {
   configure_zsh
-  configure_eza
-  configure_atuin
-  configure_starship
-  configure_lazygit
+  configure_gpg
 
-  configure_asdf
-  configure_jdk "${JAVA_VERSION}"
-  configure_python "${PYTHON_VERSION}"
-  configure_node "${NODE_VERSION}"
-  configure_rust "${RUST_VERSION}"
+  # configure_eza
+  # configure_atuin
+  # configure_starship
+  # configure_lazygit
 
-  configure_macos_preferences
+  # configure_asdf
+  # configure_jdk "${JAVA_VERSION}"
+  # configure_python "${PYTHON_VERSION}"
+  # configure_node "${NODE_VERSION}"
+  # configure_rust "${RUST_VERSION}"
+
+  # configure_macos_preferences
 }
 
 # BEGIN
