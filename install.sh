@@ -12,6 +12,7 @@ BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 JAVA_VERSION="${JAVA_VERSION:-"latest:openjdk-22"}"
 NODE_VERSION="${NODE_VERSION:-"latest:20"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"3.12.3"}"
+RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
 ###########
 
 configure_zsh() {
@@ -133,6 +134,14 @@ EOF
   fi
 }
 
+configure_rust() {
+  local RUST_VERSION=$1
+  info "Configuring Rust ${RUST_VERSION}"
+  asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git
+  RUST_WITHOUT=rust-docs asdf install rust "${RUST_VERSION}"
+  asdf global rust "${RUST_VERSION}"
+}
+
 configure_macos_preferences() {
   info "Configuring macOS preferences"
   defaults write NSGlobalDomain AppleShowAllExtensions -bool true
@@ -152,6 +161,7 @@ main() {
   configure_jdk "${JAVA_VERSION}"
   configure_python "${PYTHON_VERSION}"
   configure_node "${NODE_VERSION}"
+  configure_rust "${RUST_VERSION}"
 
   configure_macos_preferences
 }

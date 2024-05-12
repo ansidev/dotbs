@@ -20,4 +20,5 @@ BREW_PREFIX="/opt/homebrew"
 # Development tool versions
 JAVA_VERSION="latest:openjdk-22"
 NODE_VERSION="latest:20"
-PYTHON_VERSION=3.12.3
+PYTHON_VERSION="3.12.3"
+RUST_VERSION="1.78.0"
