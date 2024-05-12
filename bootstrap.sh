@@ -1,21 +1,6 @@
 #!/bin/sh
 
-# Color functions
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[1;34m'
-YELLOW='\033[1;33m'
-NO_COLOR='\033[0m'
-
-color() { COLOR=$1; TEXT=$2; echo "${COLOR}${TEXT}${NO_COLOR}"; }
-
-error() { color "${RED}" "${1}"; }
-
-success() { color "${GREEN}" "${1}"; }
-
-info() { color "${BLUE}" "${1}"; }
-
-warn() { color "${YELLOW}" "${1}"; }
+source utils.sh
 
 # Feature flags
 FEATURE_GPG_KEY="gpg_key"
@@ -27,27 +12,6 @@ GPG_KEY_TYPE="rsa"
 GPG_KEY_LENGTH="4096"
 GPG_SUBKEY_TYPE="rsa"
 GPG_SUBKEY_LENGTH="4096"
-
-# Utility functions
-###################
-is_empty() {
-  VALUE=$1
-  VARIABLE_NAME=$2
-  ([[ -z "${VALUE}" ]] && echo "$(warn "${VARIABLE_NAME}") $(error 'is required.')" && return 1) || return 0
-}
-
-is_contain() {
-  local ARRAY=("$1")
-  local ELEMENT=$2
-  [[ " ${ARRAY[@]} " =~ " ${ELEMENT} " ]]
-}
-
-has_substr() {
-  local STRING=$1
-  local SUBSTRING=$2
-  [[ "${STRING}" == *"${SUBSTRING}"* ]]
-}
-###################
 
 # Load and set default value for some variables
 load_variables() {
@@ -95,10 +59,6 @@ print_variables() {
 
 # Function to be executed on Ctrl+C
 quit() { info "Aborted, exiting..." && exit 1; }
-
-ensure_file_exists() {
-  FILE=$1; [[ ! -f "${FILE}" ]] && (info "Creating empty file ${FILE}" && touch "${FILE}")
-}
 
 configure_ssh_dir() {
   [[ ! -d "${SSH_DIR}" ]] && mkdir -p "${SSH_DIR}"
@@ -274,12 +234,12 @@ main() {
   fi
 
   ! [[ -x "$(command -v brew)" ]] && (echo "Installing brew" && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)")
-  grep -qFx 'eval "$(/opt/homebrew/bin/brew shellenv)"' "${HOME}/.zprofile" || echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "${HOME}/.zprofile"
+  modify_oneline_config 'eval "$(/opt/homebrew/bin/brew shellenv)"' "${HOME}/.zprofile"
   eval "$(/opt/homebrew/bin/brew shellenv)"
 
   [[ ! -f "/opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && (echo "Installing zsh-autosuggestions" && brew install zsh-autosuggestions)
   ensure_file_exists "${HOME}/.zshrc"
-  grep -qFx 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' "${HOME}/.zshrc" || echo 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> "${HOME}/.zshrc"
+  modify_oneline_config 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' "${HOME}/.zshrc"
 
   configure_ssh_key
   if ! is_contain "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && [[ -z ${GPG_KEY_ID} ]]; then
