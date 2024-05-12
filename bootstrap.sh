@@ -225,12 +225,12 @@ configure_dot_files() {
 
 main() {
   load_variables
-  if is_contain "$@" "--check"; then
+  if is_contains "$@" "--check"; then
     print_variables
   fi
   pre_check_variables
 
-  if is_contain "$@" "--check"; then
+  if is_contains "$@" "--check"; then
     info "Running in check mode. Exiting..."
     exit 0
   fi
@@ -244,18 +244,18 @@ main() {
   modify_oneline_config 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' "${HOME}/.zshrc"
 
   configure_ssh_key
-  if ! is_contain "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && [[ -z ${GPG_KEY_ID} ]]; then
+  if ! is_contains "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && [[ -z ${GPG_KEY_ID} ]]; then
     configure_gpg_key
   fi
 
   if [[ "${GIT_PROVIDER}" == "github" ]]; then
     configure_github_ssh_key
-    if ! is_contain "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && ! is_contain "${DISABLED_FEATURES}" "${FEATURE_GITHUB_GPG_KEY}"; then
+    if ! is_contains "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && ! is_contains "${DISABLED_FEATURES}" "${FEATURE_GITHUB_GPG_KEY}"; then
       configure_github_gpg_key
     fi
   fi
 
-  if ! is_contain "${DISABLED_FEATURES}" "${FEATURE_DOT_FILES}"; then
+  if ! is_contains "${DISABLED_FEATURES}" "${FEATURE_DOT_FILES}"; then
     configure_dot_files
   fi
 

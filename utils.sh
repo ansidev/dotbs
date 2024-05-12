@@ -27,7 +27,7 @@ is_empty() {
   ([[ -z "${VALUE}" ]] && echo "$(warn "${VARIABLE_NAME}") $(error 'is required.')" && return 1) || return 0
 }
 
-is_contain() {
+is_contains() {
   local ARRAY=("$1")
   local ELEMENT=$2
   [[ " ${ARRAY[@]} " =~ " ${ELEMENT} " ]]
