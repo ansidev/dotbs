@@ -111,7 +111,9 @@ configure_ssh_key() {
   (! pgrep -x ssh-agent > /dev/null) && (info "Start ssh-agent in the background" && eval "$(ssh-agent -s)")
 
   info "Adding SSH key to ssh-agent"
-  ssh-add --apple-use-keychain "${SSH_KEY_FILE}"
+  /usr/bin/ssh-add --apple-use-keychain "${SSH_KEY_FILE}"
+
+  modify_oneline_config '/usr/bin/ssh-add --apple-use-keychain' "${HOME}/.zprofile"
 }
 
 configure_github_ssh_key() {
