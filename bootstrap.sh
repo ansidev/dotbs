@@ -154,6 +154,38 @@ EOF
   ssh -T git@github.com
 }
 
+configure_gpg() {
+  local GPG_CONFIG_DIR="${HOME}/.gnupg"
+  local GPG_CONFIG_FILE="${GPG_CONFIG_DIR}/gpg.conf"
+  local GPG_AGENT_CONFIG_FILE="${GPG_CONFIG_DIR}/gpg-agent.conf"
+  info "Configuring GPG"
+  brew install gnupg pinentry-mac
+
+  ensure_dir_exists "${GPG_CONFIG_DIR}"
+  ensure_file_exists "${GPG_CONFIG_FILE}"
+  ensure_file_exists "${GPG_AGENT_CONFIG_FILE}"
+
+  modify_oneline_config 'use-agent' "${GPG_CONFIG_FILE}"
+
+  modify_oneline_config "pinentry-program ${BREW_PREFIX}/bin/pinentry" "${GPG_AGENT_CONFIG_FILE}"
+  modify_oneline_config 'default-cache-ttl 34560000' "${GPG_AGENT_CONFIG_FILE}"
+  modify_oneline_config 'max-cache-ttl 34560000' "${GPG_AGENT_CONFIG_FILE}"
+
+  local GPG_CONFIG_START_COMMENT="# GPG_CONFIG - START"
+  local GPG_CONFIG_END_COMMENT="# GPG_CONFIG - END"
+  if grep -q -e "${GPG_CONFIG_START_COMMENT}" -e "${GPG_CONFIG_END_COMMENT}" "${ZSHRC_CONFIG_FILE}"; then
+    warn "GPG configurations already exist. Skipping..."
+  else
+    cat <<EOF >> "${ZSHRC_CONFIG_FILE}"
+
+${GPG_CONFIG_START_COMMENT}
+export GPG_TTY=\$(tty)
+gpgconf --launch gpg-agent
+${GPG_CONFIG_END_COMMENT}
+EOF
+  fi
+}
+
 configure_gpg_key() {
   ! [[ -x "$(command -v gpg)" ]] && (info "Installing GnuPG" && brew install gnupg)
 
@@ -244,6 +276,8 @@ main() {
   modify_oneline_config 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' "${HOME}/.zshrc"
 
   configure_ssh
+
+  configure_gpg
   if ! is_contains "${DISABLED_FEATURES}" "${FEATURE_GPG_KEY}" && [[ -z ${GPG_KEY_ID} ]]; then
     configure_gpg_key
   fi
