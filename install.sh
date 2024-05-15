@@ -154,18 +154,18 @@ main() {
   configure_zsh
   configure_gpg
 
-  # configure_eza
-  # configure_atuin
-  # configure_starship
-  # configure_lazygit
+  configure_eza
+  configure_atuin
+  configure_starship
+  configure_lazygit
 
-  # configure_asdf
-  # configure_jdk "${JAVA_VERSION}"
-  # configure_python "${PYTHON_VERSION}"
-  # configure_node "${NODE_VERSION}"
-  # configure_rust "${RUST_VERSION}"
+  configure_asdf
+  configure_jdk "${JAVA_VERSION}"
+  configure_python "${PYTHON_VERSION}"
+  configure_node "${NODE_VERSION}"
+  configure_rust "${RUST_VERSION}"
 
-  # configure_macos_preferences
+  configure_macos_preferences
 }
 
 # BEGIN
