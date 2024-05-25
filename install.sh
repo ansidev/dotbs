@@ -21,26 +21,19 @@ NEOVIM_VERSION="${NEOVIM_VERSION:-"stable"}"
 ###########
 
 configure_zsh() {
+  info "Configuring .zshrc"
+
   local ZSH_CONFIG_START_COMMENT="# ZSH_CONFIG - START"
   local ZSH_CONFIG_END_COMMENT="# ZSH_CONFIG - END"
-
-  ensure_file_exists "${ZSHRC_CONFIG_FILE}"
-
-  info "Configuring .zshrc"
-  if grep -q -e "${ZSH_CONFIG_START_COMMENT}" -e "${ZSH_CONFIG_END_COMMENT}" "${ZSHRC_CONFIG_FILE}"; then
-    warn "ZSH configurations already exist. Skipping..."
-  else
-    cat <<EOF >> "${ZSHRC_CONFIG_FILE}"
-
-${ZSH_CONFIG_START_COMMENT}
+  local ZSH_CONFIG=$(cat <<EOF
 # ZSH base configurations
-bindkey  "^[[H"   beginning-of-line
-bindkey  "^[[F"   end-of-line
-bindkey  "^[[3~"  delete-char
-bindkey '\t'      complete-word       # tab          | complete
-bindkey '^[[Z'    autosuggest-accept  # shift + tab  | autosuggest
+bindkey "^[[H"  beginning-of-line
+bindkey "^[[F"  end-of-line
+bindkey "^[[3~" delete-char
+bindkey "\t"    complete-word       # tab          | complete
+bindkey "^[[Z"  autosuggest-accept  # shift + tab  | autosuggest
 
-HISTFILE=\$HOME/.zsh_history
+HISTFILE=\${HOME}/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
@@ -48,9 +41,21 @@ setopt appendhistory
 # ZSH aliases
 alias cls="printf '\033[3J' && clear"
 alias timestamp="date +%s"
-${ZSH_CONFIG_END_COMMENT}
+
+# Brew prefix
+BREW_PREFIX="$(brew --prefix)"
+
+if type brew &>/dev/null; then
+  fpath=(\${BREW_PREFIX}/share/zsh-completions \$fpath)
+  autoload -Uz compinit
+  compinit
+fi
 EOF
-  fi
+)
+
+  ensure_file_exists "${ZSHRC_CONFIG_FILE}"
+
+  modify_multiline_config "${ZSH_CONFIG_START_COMMENT}" "${ZSH_CONFIG_END_COMMENT}" "${ZSH_CONFIG}" "${ZSHRC_CONFIG_FILE}"
 }
 
 install_eza() {
