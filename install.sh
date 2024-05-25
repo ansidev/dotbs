@@ -99,7 +99,7 @@ install_mise() {
   info "Configuring mise"
   brew install mise
   mise use -g usage
-  mise completion zsh > ${BREW_PREFIX}/share/zsh-completions/_mise
+  mise completion zsh > "${BREW_ZSH_COMPLETIONS_DIR}/_mise"
   mise activate zsh
 
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
