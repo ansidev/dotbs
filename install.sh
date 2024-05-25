@@ -32,6 +32,8 @@ ${ZSH_CONFIG_START_COMMENT}
 bindkey  "^[[H"   beginning-of-line
 bindkey  "^[[F"   end-of-line
 bindkey  "^[[3~"  delete-char
+bindkey '\t'      complete-word       # tab          | complete
+bindkey '^[[Z'    autosuggest-accept  # shift + tab  | autosuggest
 
 HISTFILE=\$HOME/.zsh_history
 HISTSIZE=10000
