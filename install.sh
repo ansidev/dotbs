@@ -72,6 +72,7 @@ install_lazygit() {
   modify_oneline_config 'alias lg="lazygit"' "${ZSHRC_CONFIG_FILE}"
 }
 
+# deprecated
 install_asdf() {
   info "Installing asdf"
   brew install asdf
@@ -81,6 +82,18 @@ install_asdf() {
 
   info "Installing asdf"
   modify_oneline_config '. ${BREW_PREFIX}/opt/asdf/libexec/asdf.sh' "${ZSHRC_CONFIG_FILE}"
+}
+
+install_mise() {
+  info "Configuring mise"
+  brew install mise
+  mise use -g usage
+  mise completion zsh > ${BREW_PREFIX}/share/zsh-completions/_mise
+  mise activate zsh
+
+  ensure_file_exists "${ZSHRC_CONFIG_FILE}"
+
+  modify_oneline_config 'eval "$(mise activate zsh)"' "${ZSHRC_CONFIG_FILE}"
 }
 
 install_jdk() {
@@ -157,13 +170,14 @@ main() {
   install_starship
   install_lazygit
 
-  install_asdf
+  install_mise
   install_jdk "${JAVA_VERSION}"
   install_python "${PYTHON_VERSION}"
   install_node "${NODE_VERSION}"
   install_rust "${RUST_VERSION}"
 
   configure_macos_preferences
+  info "Done."
 }
 
 # BEGIN
