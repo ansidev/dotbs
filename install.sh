@@ -7,6 +7,7 @@ source utils.sh
 ###########
 ZSHRC_CONFIG_FILE="${ZSHRC_CONFIG_FILE:-"${ZDOTDIR-$HOME}/.zshrc"}"
 BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
+BREW_ZSH_COMPLETIONS_DIR="${BREW_PREFIX}/share/zsh-completions"
 
 # Development tool versions
 GO_VERSION="${GO_VERSION:-"latest"}"
@@ -61,6 +62,7 @@ install_eza() {
 install_atuin() {
   info "Installing atuin"
   brew install atuin
+  atuin gen-completions --shell zsh --out-dir "${BREW_ZSH_COMPLETIONS_DIR}"
   modify_oneline_config 'eval "$(atuin init zsh --disable-up-arrow)"' "${ZSHRC_CONFIG_FILE}"
 }
 
