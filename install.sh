@@ -5,7 +5,7 @@ source utils.sh
 
 # Variables
 ###########
-ZSHRC_CONFIG_FILE="${ZSHRC_CONFIG_FILE:-"${HOME}/.zshrc"}"
+ZSHRC_CONFIG_FILE="${ZSHRC_CONFIG_FILE:-"${ZDOTDIR-$HOME}/.zshrc"}"
 BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 
 # Development tool versions
