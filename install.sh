@@ -12,6 +12,7 @@ BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
 MVND_VERSION="${MVND_VERSION:-"1.0-m8-m39"}"
 NODE_VERSION="${NODE_VERSION:-"20.13.1"}"
+PNPM_VERSION="${PNPM_VERSION:-"latest"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"3.12.3"}"
 RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
 ###########
@@ -117,6 +118,13 @@ install_node() {
   mise use -g "nodejs@${NODE_VERSION}"
 }
 
+install_pnpm() {
+  local PNPM_VERSION=$1
+  info "Installing pnpm ${PNPM_VERSION}"
+  mise plugins install pnpm https://github.com/jonathanmorley/asdf-pnpm --force
+  mise use -g "pnpm@${PNPM_VERSION}"
+}
+
 install_python() {
   local PYTHON_VERSION=$1
   info "Installing Python ${PYTHON_VERSION}"
@@ -172,6 +180,7 @@ main() {
   install_mvnd "${MVND_VERSION}"
   install_python "${PYTHON_VERSION}"
   install_node "${NODE_VERSION}"
+  install_pnpm "${PNPM_VERSION}"
   install_rust "${RUST_VERSION}"
 
   configure_macos_preferences
