@@ -13,7 +13,7 @@ JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
 MVND_VERSION="${MVND_VERSION:-"1.0-m8-m39"}"
 NODE_VERSION="${NODE_VERSION:-"20.13.1"}"
 PNPM_VERSION="${PNPM_VERSION:-"latest"}"
-PYTHON_VERSION="${PYTHON_VERSION:-"3.12.3"}"
+PYTHON_VERSION="${PYTHON_VERSION:-"latest"}"
 RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
 ###########
 
@@ -126,29 +126,24 @@ install_pnpm() {
 }
 
 install_python() {
-  local PYTHON_VERSION=$1
+  local MISE_PYTHON_VERSION=$1
   info "Installing Python ${PYTHON_VERSION}"
-  asdf plugin-add python
-  asdf install python "${PYTHON_VERSION}"
-  asdf global python "${PYTHON_VERSION}"
+  mise use -g "python@${PYTHON_VERSION}"
 
-  local ASDF_PYTHON_CONFIG_START_COMMENT="# ASDF_PYTHON_CONFIG - START"
-  local ASDF_PYTHON_CONFIG_END_COMMENT="# ASDF_PYTHON_CONFIG - END"
+  local PYTHON_VERSION=$(python -V | cut -d' ' -f2)
+  local PYTHON_PATH=$([ "${MISE_PYTHON_VERSION}" != "${PYTHON_VERSION}" ] && echo "\${HOME}/.local/share/mise/installs/python/${MISE_PYTHON_VERSION}" || echo "\${HOME}/.local/share/mise/installs/python/\${PYTHON_VERSION}")
+  local MISE_PYTHON_CONFIG_START_COMMENT="# MISE_PYTHON_CONFIG - START"
+  local MISE_PYTHON_CONFIG_END_COMMENT="# MISE_PYTHON_CONFIG - END"
+  local MISE_PYTHON_CONFIG=$(cat <<EOF
+export PYTHON_VERSION=${PYTHON_VERSION}
+export PYTHON_PATH=${PYTHON_PATH}
+export PATH=\$PYTHON_PATH/bin:\$PATH
+EOF
+)
 
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
 
-  if grep -q -e "${ASDF_PYTHON_CONFIG_START_COMMENT}" -e "${ASDF_PYTHON_CONFIG_END_COMMENT}" "${ZSHRC_CONFIG_FILE}"; then
-    warn "asdf Python configurations already exist. Skipping..."
-  else
-    cat <<EOF >> "${ZSHRC_CONFIG_FILE}"
-
-${ASDF_PYTHON_CONFIG_START_COMMENT}
-export PYTHON_VERSION=$PYTHON_VERSION
-export PYTHON_PATH=\$HOME/.asdf/installs/python/\$PYTHON_VERSION
-export PATH=\$PYTHON_PATH/bin:\$PATH
-${ASDF_PYTHON_CONFIG_END_COMMENT}
-EOF
-  fi
+  modify_multiline_config "${MISE_PYTHON_CONFIG_START_COMMENT}" "${MISE_PYTHON_CONFIG_END_COMMENT}" "${MISE_PYTHON_CONFIG}" "${ZSHRC_CONFIG_FILE}"
 }
 
 install_rust() {
