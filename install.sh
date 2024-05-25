@@ -149,9 +149,8 @@ EOF
 install_rust() {
   local RUST_VERSION=$1
   info "Installing Rust ${RUST_VERSION}"
-  asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git
-  RUST_WITHOUT=rust-docs asdf install rust "${RUST_VERSION}"
-  asdf global rust "${RUST_VERSION}"
+  mise plugins install rust https://github.com/code-lever/asdf-rust --force
+  RUST_WITHOUT=rust-docs mise use -g "rust@${RUST_VERSION}"
 }
 
 configure_macos_preferences() {
