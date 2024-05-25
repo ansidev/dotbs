@@ -11,7 +11,7 @@ BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 # Development tool versions
 JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
 MVND_VERSION="${MVND_VERSION:-"1.0-m8-m39"}"
-NODE_VERSION="${NODE_VERSION:-"latest:20"}"
+NODE_VERSION="${NODE_VERSION:-"20.13.1"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"3.12.3"}"
 RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
 ###########
@@ -114,9 +114,7 @@ install_mvnd() {
 install_node() {
   local NODE_VERSION=$1
   info "Installing NodeJS ${NODE_VERSION}"
-  asdf plugin-add nodejs
-  asdf install nodejs "${NODE_VERSION}"
-  asdf global nodejs "${NODE_VERSION}"
+  mise use -g "nodejs@${NODE_VERSION}"
 }
 
 install_python() {
