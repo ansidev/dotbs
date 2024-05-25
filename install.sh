@@ -9,7 +9,7 @@ ZSHRC_CONFIG_FILE="${ZSHRC_CONFIG_FILE:-"${ZDOTDIR-$HOME}/.zshrc"}"
 BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 
 # Development tool versions
-JAVA_VERSION="${JAVA_VERSION:-"latest:openjdk-22"}"
+JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
 NODE_VERSION="${NODE_VERSION:-"latest:20"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"3.12.3"}"
 RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
@@ -99,17 +99,10 @@ install_mise() {
 install_jdk() {
   local JAVA_VERSION=$1
   info "Installing JDK ${JAVA_VERSION}"
-  asdf plugin-add java https://github.com/halcyon/asdf-java.git
-  asdf install java "${JAVA_VERSION}"
-  asdf global java "${JAVA_VERSION}"
+  mise plugins install java https://github.com/halcyon/asdf-java --force
+  mise use -g "java@${JAVA_VERSION}"
+}
 
-  local ASDF_JAVA_CONFIG_START_COMMENT="# ASDF_JAVA_CONFIG - START"
-  local ASDF_JAVA_CONFIG_END_COMMENT="# ASDF_JAVA_CONFIG - END"
-
-  ensure_file_exists "${ZSHRC_CONFIG_FILE}"
-
-  info "Installing JDK"
-  modify_oneline_config '. ~/.asdf/plugins/java/set-java-home.zsh' "${ZSHRC_CONFIG_FILE}"
 }
 
 install_node() {

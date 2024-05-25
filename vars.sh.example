@@ -18,7 +18,7 @@ DISABLED_FEATURES=("gpg_key" "github_gpg_key" "dotfiles")
 BREW_PREFIX="/opt/homebrew"
 
 # Development tool versions
-JAVA_VERSION="latest:openjdk-22"
+JAVA_VERSION="corretto-11.0.23.9.1"
 NODE_VERSION="latest:20"
 PYTHON_VERSION="3.12.3"
 RUST_VERSION="1.78.0"
