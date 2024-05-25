@@ -152,7 +152,6 @@ configure_macos_preferences() {
 
 main() {
   configure_zsh
-  configure_gpg
 
   configure_eza
   configure_atuin
