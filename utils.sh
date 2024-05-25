@@ -52,4 +52,29 @@ modify_oneline_config() {
   CONFIG_FILE=$2
   grep -qFx "$CONFIG" "$CONFIG_FILE" || echo "$CONFIG" >> "$CONFIG_FILE"
 }
+
+modify_multiline_config() {
+  local START_TAG=$1
+  local END_TAG=$2
+  local CONFIG=$3
+  local CONFIG_FILE=$4
+
+  if grep -q -e "${START_TAG}" -e "${END_TAG}" "${CONFIG_FILE}"; then
+    local TEMP_FILE=$(mktemp)
+
+    printf "%s\n" "$CONFIG" > "$TEMP_FILE"
+
+    sed -i '' -e "/${START_TAG}/,/${END_TAG}/{/${START_TAG}/{p; r ${TEMP_FILE}
+        d;};/${END_TAG}/{p;d;};d;}" "${CONFIG_FILE}"
+
+    rm "${TEMP_FILE}"
+  else
+    cat <<EOF >> "${CONFIG_FILE}"
+
+${START_TAG}
+${CONFIG}
+${END_TAG}
+EOF
+  fi
+}
 ###################
