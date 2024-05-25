@@ -77,9 +77,6 @@ configure_asdf() {
   brew install asdf
   . ${BREW_PREFIX}/opt/asdf/libexec/asdf.sh
 
-  local ASDF_CONFIG_START_COMMENT="# ASDF_CONFIG - START"
-  local ASDF_CONFIG_END_COMMENT="# ASDF_CONFIG - END"
-
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
 
   info "Configuring asdf"
