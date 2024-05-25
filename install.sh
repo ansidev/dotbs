@@ -16,6 +16,7 @@ NODE_VERSION="${NODE_VERSION:-"20.13.1"}"
 PNPM_VERSION="${PNPM_VERSION:-"latest"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"latest"}"
 RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
+NEOVIM_VERSION="${NEOVIM_VERSION:-"stable"}"
 ###########
 
 configure_zsh() {
@@ -177,6 +178,13 @@ install_rust() {
   RUST_WITHOUT=rust-docs mise use -g "rust@${RUST_VERSION}"
 }
 
+install_neovim() {
+  local NEOVIM_VERSION=$1
+  info "Installing NeoVim ${NEOVIM_VERSION}"
+  mise plugins install neovim https://github.com/richin13/asdf-neovim --force
+  mise use -g "neovim@${NEOVIM_VERSION}"
+}
+
 configure_macos_preferences() {
   info "Configuring macOS preferences"
   defaults write NSGlobalDomain AppleShowAllExtensions -bool true
@@ -201,6 +209,8 @@ main() {
   install_node "${NODE_VERSION}"
   install_pnpm "${PNPM_VERSION}"
   install_rust "${RUST_VERSION}"
+
+  install_neovim "${NEOVIM_VERSION}"
 
   configure_macos_preferences
   info "Done."
