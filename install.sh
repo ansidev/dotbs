@@ -10,6 +10,7 @@ BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 
 # Development tool versions
 JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
+MVND_VERSION="${MVND_VERSION:-"1.0-m8-m39"}"
 NODE_VERSION="${NODE_VERSION:-"latest:20"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"3.12.3"}"
 RUST_VERSION="${RUST_VERSION:-"1.78.0"}"
@@ -103,6 +104,11 @@ install_jdk() {
   mise use -g "java@${JAVA_VERSION}"
 }
 
+install_mvnd() {
+  local MVND_VERSION=$1
+  info "Installing mvnd ${MVND_VERSION}"
+  mise plugins install mvnd https://github.com/joschi/asdf-mvnd --force
+  mise use -g "mvnd@${MVND_VERSION}"
 }
 
 install_node() {
@@ -165,6 +171,7 @@ main() {
 
   install_mise
   install_jdk "${JAVA_VERSION}"
+  install_mvnd "${MVND_VERSION}"
   install_python "${PYTHON_VERSION}"
   install_node "${NODE_VERSION}"
   install_rust "${RUST_VERSION}"
