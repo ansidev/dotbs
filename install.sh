@@ -9,6 +9,7 @@ ZSHRC_CONFIG_FILE="${ZSHRC_CONFIG_FILE:-"${ZDOTDIR-$HOME}/.zshrc"}"
 BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 
 # Development tool versions
+GO_VERSION="${GO_VERSION:-"latest"}"
 JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
 MVND_VERSION="${MVND_VERSION:-"1.0-m8-m39"}"
 NODE_VERSION="${NODE_VERSION:-"20.13.1"}"
@@ -98,6 +99,29 @@ install_mise() {
   modify_oneline_config 'eval "$(mise activate zsh)"' "${ZSHRC_CONFIG_FILE}"
 }
 
+install_go() {
+  local GO_VERSION=$1
+  local GOPATH="${HOME}/.go"
+
+  info "Installing Go ${GO_VERSION}"
+
+  mise use -g "go@${GO_VERSION}"
+  ensure_dir_exists "${GOPATH}"
+  go env -w GOPATH="${GOPATH}"
+
+  local MISE_GO_CONFIG_START_COMMENT="# MISE_GO_CONFIG - START"
+  local MISE_GO_CONFIG_END_COMMENT="# MISE_GO_CONFIG - END"
+  local MISE_GO_CONFIG=$(cat <<EOF
+export GOPATH="\${HOME}/.go"
+export PATH="\${GOPATH}/bin:\${PATH}"
+EOF
+)
+
+  ensure_file_exists "${ZSHRC_CONFIG_FILE}"
+
+  modify_multiline_config "${MISE_GO_CONFIG_START_COMMENT}" "${MISE_GO_CONFIG_END_COMMENT}" "${MISE_GO_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+}
+
 install_jdk() {
   local JAVA_VERSION=$1
   info "Installing JDK ${JAVA_VERSION}"
@@ -170,6 +194,7 @@ main() {
   install_lazygit
 
   install_mise
+  install_go "${GO_VERSION}"
   install_jdk "${JAVA_VERSION}"
   install_mvnd "${MVND_VERSION}"
   install_python "${PYTHON_VERSION}"
