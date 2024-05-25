@@ -48,44 +48,44 @@ EOF
   fi
 }
 
-configure_eza() {
-  info "Configuring eza"
+install_eza() {
+  info "Installing eza"
   brew install eza
   modify_oneline_config 'alias ll="eza -la"' "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_atuin() {
-  info "Configuring atuin"
+install_atuin() {
+  info "Installing atuin"
   brew install atuin
   modify_oneline_config 'eval "$(atuin init zsh --disable-up-arrow)"' "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_starship() {
-  info "Configuring starship"
+install_starship() {
+  info "Installing starship"
   brew install starship
   modify_oneline_config 'eval "$(starship init zsh)"' "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_lazygit() {
-  info "Configuring lazygit"
+install_lazygit() {
+  info "Installing lazygit"
   brew install lazygit
   modify_oneline_config 'alias lg="lazygit"' "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_asdf() {
-  info "Configuring asdf"
+install_asdf() {
+  info "Installing asdf"
   brew install asdf
   . ${BREW_PREFIX}/opt/asdf/libexec/asdf.sh
 
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
 
-  info "Configuring asdf"
+  info "Installing asdf"
   modify_oneline_config '. ${BREW_PREFIX}/opt/asdf/libexec/asdf.sh' "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_jdk() {
+install_jdk() {
   local JAVA_VERSION=$1
-  info "Configuring JDK ${JAVA_VERSION}"
+  info "Installing JDK ${JAVA_VERSION}"
   asdf plugin-add java https://github.com/halcyon/asdf-java.git
   asdf install java "${JAVA_VERSION}"
   asdf global java "${JAVA_VERSION}"
@@ -95,21 +95,21 @@ configure_jdk() {
 
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
 
-  info "Configuring JDK"
+  info "Installing JDK"
   modify_oneline_config '. ~/.asdf/plugins/java/set-java-home.zsh' "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_node() {
+install_node() {
   local NODE_VERSION=$1
-  info "Configuring NodeJS ${NODE_VERSION}"
+  info "Installing NodeJS ${NODE_VERSION}"
   asdf plugin-add nodejs
   asdf install nodejs "${NODE_VERSION}"
   asdf global nodejs "${NODE_VERSION}"
 }
 
-configure_python() {
+install_python() {
   local PYTHON_VERSION=$1
-  info "Configuring Python ${PYTHON_VERSION}"
+  info "Installing Python ${PYTHON_VERSION}"
   asdf plugin-add python
   asdf install python "${PYTHON_VERSION}"
   asdf global python "${PYTHON_VERSION}"
@@ -133,9 +133,9 @@ EOF
   fi
 }
 
-configure_rust() {
+install_rust() {
   local RUST_VERSION=$1
-  info "Configuring Rust ${RUST_VERSION}"
+  info "Installing Rust ${RUST_VERSION}"
   asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git
   RUST_WITHOUT=rust-docs asdf install rust "${RUST_VERSION}"
   asdf global rust "${RUST_VERSION}"
@@ -152,16 +152,16 @@ configure_macos_preferences() {
 main() {
   configure_zsh
 
-  configure_eza
-  configure_atuin
-  configure_starship
-  configure_lazygit
+  install_eza
+  install_atuin
+  install_starship
+  install_lazygit
 
-  configure_asdf
-  configure_jdk "${JAVA_VERSION}"
-  configure_python "${PYTHON_VERSION}"
-  configure_node "${NODE_VERSION}"
-  configure_rust "${RUST_VERSION}"
+  install_asdf
+  install_jdk "${JAVA_VERSION}"
+  install_python "${PYTHON_VERSION}"
+  install_node "${NODE_VERSION}"
+  install_rust "${RUST_VERSION}"
 
   configure_macos_preferences
 }
