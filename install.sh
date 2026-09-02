@@ -8,11 +8,16 @@ source utils.sh
 ZSHRC_CONFIG_FILE="${ZSHRC_CONFIG_FILE:-"${ZDOTDIR-$HOME}/.zshrc"}"
 BREW_PREFIX="${BREW_PREFIX:-"/opt/homebrew"}"
 BREW_ZSH_COMPLETIONS_DIR="${BREW_PREFIX}/share/zsh-completions"
+FLUID_VIM_CONFIG_DIR_NAME="fluid-vim"
+FLUID_VIM_CONFIG_DIR="${HOME}/.config/${FLUID_VIM_CONFIG_DIR_NAME}"
+FLUID_VIM_USER_CONFIG_DIR="${FLUID_VIM_CONFIG_DIR}/lua/user"
 
 # Development tool versions
 GO_VERSION="${GO_VERSION:-"latest"}"
-JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.23.9.1"}"
+JAVA_VERSION="${JAVA_VERSION:-"corretto-11.0.24.8.1"}"
+MAVEN_VERSION="${MAVEN_VERSION:-"3"}"
 MVND_VERSION="${MVND_VERSION:-"1.0-m8-m39"}"
+THRIFT_VERSION="${THRIFT_VERSION:-"0.20.0"}"
 NODE_VERSION="${NODE_VERSION:-"20.13.1"}"
 PNPM_VERSION="${PNPM_VERSION:-"latest"}"
 PYTHON_VERSION="${PYTHON_VERSION:-"latest"}"
@@ -23,9 +28,9 @@ NEOVIM_VERSION="${NEOVIM_VERSION:-"stable"}"
 configure_zsh() {
   info "Configuring .zshrc"
 
-  local ZSH_CONFIG_START_COMMENT="# ZSH_CONFIG - START"
-  local ZSH_CONFIG_END_COMMENT="# ZSH_CONFIG - END"
-  local ZSH_CONFIG=$(cat <<EOF
+  local ZSH_BASE_CONFIG_START_COMMENT="# ZSH_BASE_CONFIG - START"
+  local ZSH_BASE_CONFIG_END_COMMENT="# ZSH_BASE_CONFIG - END"
+  local ZSH_BASE_CONFIG=$(cat <<EOF
 # ZSH base configurations
 bindkey "^[[H"  beginning-of-line
 bindkey "^[[F"  end-of-line
@@ -37,10 +42,12 @@ HISTFILE=\${HOME}/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
-
-# ZSH aliases
-alias cls="printf '\033[3J' && clear"
-alias timestamp="date +%s"
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
 
 # Brew prefix
 BREW_PREFIX="$(brew --prefix)"
@@ -53,9 +60,64 @@ fi
 EOF
 )
 
+  local ZSH_ALIASES_CONFIG_START_COMMENT="# ZSH_ALIASES_CONFIG - START"
+  local ZSH_ALIASES_CONFIG_END_COMMENT="# ZSH_ALIASES_CONFIG - END"
+  local ZSH_ALIASES_CONFIG=$(cat <<EOF
+# ZSH aliases
+alias cls="printf '\033[3J' && clear"
+alias timestamp="date +%s"
+alias reset-display='/Applications/RDM.app/Contents/MacOS/RDM -d 0 -w 2560 -h 1440'
+EOF
+)
+
+  local ZSH_FUNCTIONS_CONFIG_START_COMMENT="# ZSH_FUNCTIONS_CONFIG - START"
+  local ZSH_FUNCTIONS_CONFIG_END_COMMENT="# ZSH_FUNCTIONS_CONFIG - END"
+  local ZSH_FUNCTIONS_CONFIG=$(cat <<EOF
+# ZSH functions
+function git-log-branch() {
+  git log --graph --color=always --decorate --pretty=format:'Commit: %C(yellow)%H%C(reset) %nAuthor: %an <%ae>%nDate: %ad%nSigned by: %C(green)%GS%C(reset)%n%G?%n%n%C(green)%s%C(reset)%n%n%C(cyan)%b%C(reset)%n' "\$1" -- | sed -E 's/G$/Signature status: \x1b[32mvalid signature\x1b[0m/; s/B$/Signature status: \x1b[31mbad signature\x1b[0m/; s/U$/Signature status: \x1b[31muntrusted signature\x1b[0m/; s/X$/Signature status: \x1b[31mexpired signature\x1b[0m/; s/Y$/Signature status: \x1b[31mexpired key signature\x1b[0m/; s/R$/Signature status: \x1b[31mrevoked key signature\x1b[0m/; s/E$/Signature status: \x1b[31mcannot check signature\x1b[0m/; s/N$/Signature status: \x1b[31mno signature\x1b[0m/' | sed -E '/Signed by: \x1b\[32m\x1b\[m$/d' | less -R
+}
+
+function list-ws() {
+  herdr workspace list | jq -r '
+  .result.workspaces
+  | (["#", "Label", "Status", "Focused", "Panes", "Tabs", "Workspace ID"],
+     (.[] | [.number, .label, .agent_status, .focused, .pane_count, .tab_count, .workspace_id]))
+  | @tsv
+' | column -t -s $'\t'
+}
+
+function open-ws() {
+  local WORKSPACE_DIR="\${1:-\$PWD}"
+  herdr workspace create --cwd "\${WORKSPACE_DIR}" --focus
+}
+
+function close-ws() {
+  local workspace_id
+
+  workspace_id=$(herdr workspace list |
+    jq -r --arg value "$1" '
+      .result.workspaces[]
+      | select(.label == $value or .workspace_id == $value)
+      | .workspace_id
+    ')
+
+  if [[ -z "\$workspace_id" ]]; then
+    echo "Workspace not found: \$1" >&2
+    return 1
+  fi
+
+  herdr workspace close "\$workspace_id"
+}
+EOF
+)
+
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
 
-  modify_multiline_config "${ZSH_CONFIG_START_COMMENT}" "${ZSH_CONFIG_END_COMMENT}" "${ZSH_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+  modify_multiline_config "${ZSH_BASE_CONFIG_START_COMMENT}" "${ZSH_BASE_CONFIG_END_COMMENT}" "${ZSH_BASE_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+  modify_multiline_config "${ZSH_ALIASES_CONFIG_START_COMMENT}" "${ZSH_ALIASES_CONFIG_END_COMMENT}" "${ZSH_ALIASES_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+  modify_multiline_config "${ZSH_FUNCTIONS_CONFIG_START_COMMENT}" "${ZSH_FUNCTIONS_CONFIG_END_COMMENT}" "${ZSH_FUNCTIONS_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+  info "Finished configuring .zshrc"
 }
 
 install_eza() {
@@ -108,25 +170,24 @@ install_mise() {
 }
 
 install_go() {
-  local GO_VERSION=$1
-  local GOPATH="${HOME}/.go"
+  local MISE_GO_VERSION=$1
+  info "Installing Go ${MISE_GO_VERSION}"
+  mise use -g "go@${MISE_GO_VERSION}"
 
-  info "Installing Go ${GO_VERSION}"
-
-  mise use -g "go@${GO_VERSION}"
-  ensure_dir_exists "${GOPATH}"
-  go env -w GOPATH="${GOPATH}"
-
+  local GO_VERSION=$(go version | cut -d' ' -f3 | cut -c3-)
+  local GOPATH=$([ "${MISE_GO_VERSION}" != "${GO_VERSION}" ] && echo "${HOME}/.local/share/mise/installs/go/${MISE_GO_VERSION}" || echo "${HOME}/.local/share/mise/installs/go/\${GO_VERSION}")
   local MISE_GO_CONFIG_START_COMMENT="# MISE_GO_CONFIG - START"
   local MISE_GO_CONFIG_END_COMMENT="# MISE_GO_CONFIG - END"
   local MISE_GO_CONFIG=$(cat <<EOF
-export GOPATH="\${HOME}/.go"
+export GO_VERSION=${GO_VERSION}
+export GOPATH=${GOPATH}
 export PATH="\${GOPATH}/bin:\${PATH}"
 EOF
 )
 
   ensure_file_exists "${ZSHRC_CONFIG_FILE}"
 
+  go env -w GOPATH="${GOPATH}"
   modify_multiline_config "${MISE_GO_CONFIG_START_COMMENT}" "${MISE_GO_CONFIG_END_COMMENT}" "${MISE_GO_CONFIG}" "${ZSHRC_CONFIG_FILE}"
 }
 
@@ -137,11 +198,28 @@ install_jdk() {
   mise use -g "java@${JAVA_VERSION}"
 }
 
+install_maven() {
+  local MAVEN_VERSION=$1
+  info "Installing Maven ${MAVEN_VERSION}"
+  mise plugin install maven --force
+  mise use -g "maven@${MAVEN_VERSION}"
+}
+
 install_mvnd() {
   local MVND_VERSION=$1
   info "Installing mvnd ${MVND_VERSION}"
   mise plugins install mvnd https://github.com/joschi/asdf-mvnd --force
   mise use -g "mvnd@${MVND_VERSION}"
+}
+
+install_thrift() {
+  local THRIFT_VERSION=$1
+  info "Installing dependency tools"
+  brew install automake bison libtool pkg-config
+  export PATH=/opt/homebrew/Cellar/m4/1.4.19/bin:$PATH
+  info "Installing Thrift ${THRIFT_VERSION}"
+  mise plugins install thrift https://github.com/alisaifee/asdf-thrift --force
+  mise use -g "thrift@${THRIFT_VERSION}"
 }
 
 install_node() {
@@ -192,6 +270,18 @@ install_neovim() {
   mise use -g "neovim@${NEOVIM_VERSION}"
 }
 
+install_fluidvim() {
+  [[ ! -d "${FLUID_VIM_CONFIG_DIR}" ]] && \
+    echo "Downloading FluidVim" && \
+    git clone git@github.com:ansidev/fluid-vim.git "${FLUID_VIM_CONFIG_DIR}"
+
+  [[ ! -d "${FLUID_VIM_USER_CONFIG_DIR}" ]] && \
+    echo "Downloading FluidVim user configurations" && \
+    git clone git@github.com:ansidev/fluid-vim-configs.git "${FLUID_VIM_USER_CONFIG_DIR}"
+
+  modify_oneline_config "alias fvim='NVIM_APPNAME=${FLUID_VIM_CONFIG_DIR_NAME} nvim'" "${ZSHRC_CONFIG_FILE}"
+}
+
 configure_macos_preferences() {
   info "Configuring macOS preferences"
   defaults write NSGlobalDomain AppleShowAllExtensions -bool true
@@ -200,32 +290,26 @@ configure_macos_preferences() {
   defaults write com.apple.dock scroll-to-open -bool TRUE; killall Dock
 }
 
-main() {
-  configure_zsh
+###########
 
-  install_eza
-  install_atuin
-  install_starship
-  install_lazygit
-
-  install_mise
-  install_go "${GO_VERSION}"
-  install_jdk "${JAVA_VERSION}"
-  install_mvnd "${MVND_VERSION}"
-  install_python "${PYTHON_VERSION}"
-  install_node "${NODE_VERSION}"
-  install_pnpm "${PNPM_VERSION}"
-  install_rust "${RUST_VERSION}"
-
-  install_neovim "${NEOVIM_VERSION}"
-
-  configure_macos_preferences
-  info "Done."
+# Module dispatcher
+run_module() {
+  local module=$1
+  local prefix
+  echo "$module" | grep -E '^(zsh|macos)$' > /dev/null && prefix="configure" || prefix="install"
+  local args=""
+  case "$module" in
+    go) args="$GO_VERSION" ;;
+    jdk) args="$JAVA_VERSION" ;;
+    maven) args="$MAVEN_VERSION" ;;
+    mvnd) args="$MVND_VERSION" ;;
+    thrift) args="$THRIFT_VERSION" ;;
+    node) args="$NODE_VERSION" ;;
+    pnpm) args="$PNPM_VERSION" ;;
+    python) args="$PYTHON_VERSION" ;;
+    rust) args="$RUST_VERSION" ;;
+    neovim) args="$NEOVIM_VERSION" ;;
+  esac
+  "${prefix}_${module}" $args
 }
-
-# BEGIN
-
-# Set the trap to call the cleanup function on Ctrl+C
-trap quit INT
-
-main "$@"
+###########
