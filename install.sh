@@ -67,6 +67,9 @@ EOF
 alias cls="printf '\033[3J' && clear"
 alias timestamp="date +%s"
 alias reset-display='/Applications/RDM.app/Contents/MacOS/RDM -d 0 -w 2560 -h 1440'
+alias picmux="PI_TERMINAL_MUX=cmux PI_SUBAGENT_MUX=cmux pi -a '/approval-mode act'"
+alias pia="pi -a '/approval-mode act'"
+alias reload-zsh="source ${ZSHRC_CONFIG_FILE}"
 EOF
 )
 
@@ -78,7 +81,12 @@ function git-log-branch() {
   git log --graph --color=always --decorate --pretty=format:'Commit: %C(yellow)%H%C(reset) %nAuthor: %an <%ae>%nDate: %ad%nSigned by: %C(green)%GS%C(reset)%n%G?%n%n%C(green)%s%C(reset)%n%n%C(cyan)%b%C(reset)%n' "\$1" -- | sed -E 's/G$/Signature status: \x1b[32mvalid signature\x1b[0m/; s/B$/Signature status: \x1b[31mbad signature\x1b[0m/; s/U$/Signature status: \x1b[31muntrusted signature\x1b[0m/; s/X$/Signature status: \x1b[31mexpired signature\x1b[0m/; s/Y$/Signature status: \x1b[31mexpired key signature\x1b[0m/; s/R$/Signature status: \x1b[31mrevoked key signature\x1b[0m/; s/E$/Signature status: \x1b[31mcannot check signature\x1b[0m/; s/N$/Signature status: \x1b[31mno signature\x1b[0m/' | sed -E '/Signed by: \x1b\[32m\x1b\[m$/d' | less -R
 }
 
-function list-ws() {
+function ws-new() {
+  local WORKSPACE_DIR="\${1:-\$PWD}"
+  herdr workspace create --cwd "\${WORKSPACE_DIR}" \${@:2}
+}
+
+function ws-list() {
   herdr workspace list | jq -r '
   .result.workspaces
   | (["#", "Label", "Status", "Focused", "Panes", "Tabs", "Workspace ID"],
@@ -87,18 +95,18 @@ function list-ws() {
 ' | column -t -s $'\t'
 }
 
-function open-ws() {
+function ws-open() {
   local WORKSPACE_DIR="\${1:-\$PWD}"
   herdr workspace create --cwd "\${WORKSPACE_DIR}" --focus
 }
 
-function close-ws() {
+function ws-close() {
   local workspace_id
 
-  workspace_id=$(herdr workspace list |
-    jq -r --arg value "$1" '
+  workspace_id=\$(herdr workspace list |
+    jq -r --arg value "\$1" '
       .result.workspaces[]
-      | select(.label == $value or .workspace_id == $value)
+      | select(.label == \$value or .workspace_id == \$value)
       | .workspace_id
     ')
 
@@ -108,6 +116,72 @@ function close-ws() {
   fi
 
   herdr workspace close "\$workspace_id"
+}
+
+# Worktree management functions
+
+wt-dir() {
+  local BRANCH=\$1
+  git worktree list --porcelain |
+    awk -v branch="refs/heads/\$BRANCH" '
+      /^worktree / { dir= substr(\$0, 10) }
+      /^branch / && \$2 == branch { print dir }
+    '
+}
+
+function wt-delete() {
+  CURRENT_DIR=\$(basename \${PWD})
+  REPO=\${2:-"\${CURRENT_DIR}"}
+  BRANCH=\$1
+  WORKTREE_DIR=\$(wt-dir \$BRANCH)
+
+  echo "============================="
+  echo "REPO: \$REPO"
+  echo "BRANCH: \$BRANCH"
+  echo "WORKTREE_DIR: \$WORKTREE_DIR"
+  echo "============================="
+
+  if [[ -n "\${WORKTREE_DIR}" ]]; then
+    echo "Removing worktree"
+    git worktree remove --force "\${WORKTREE_DIR}" &>/dev/null || echo "Worktree \${WORKTREE_DIR} does not exist or has already been removed."
+  else
+    echo "Worktree for branch \$BRANCH does not exist. Skip deletion."
+  fi
+
+  if git show-ref --verify --quiet "refs/heads/\$BRANCH"; then
+    echo "Removing branch \$BRANCH..."
+    git branch -D "\$BRANCH"
+  else
+    echo "Branch \$BRANCH does not exist. Skip deletion."
+  fi
+
+  if [[ -n "\${WORKTREE_DIR}" ]]; then
+    echo "Removing worktree directory \$WORKTREE_DIR..."
+    rm -rf \$WORKTREE_DIR
+  else
+    echo "Worktree directory \$WORKTREE_DIR does not exist. Skip deletion."
+  fi
+
+  (echo "Closing herdr workspace \$BRANCH..." && ws-close \$1)
+  echo "Repo \${REPO} - Worktree \$BRANCH deleted."
+}
+
+function install-skill() {
+  pnpx skills add "\$1" -g \${@:2}
+}
+
+function gh-clone() {
+  local OWNER_REPO="\$1"
+  local TARGET_DIR="\${2:-\$HOME/projects/oss}"
+
+  if [[ "\$OWNER_REPO" == https://github.com/* ]]; then
+    OWNER_REPO="\${OWNER_REPO#https://github.com/}"
+  fi
+
+  local REPO="\${OWNER_REPO#*/}"
+
+  git clone https://github.com/\$OWNER_REPO \$TARGET_DIR/\$REPO
+  cd \$TARGET_DIR/\$REPO
 }
 EOF
 )
@@ -280,6 +354,13 @@ install_fluidvim() {
     git clone git@github.com:ansidev/fluid-vim-configs.git "${FLUID_VIM_USER_CONFIG_DIR}"
 
   modify_oneline_config "alias fvim='NVIM_APPNAME=${FLUID_VIM_CONFIG_DIR_NAME} nvim'" "${ZSHRC_CONFIG_FILE}"
+}
+
+configure_zoxide() {
+  info "Installing zoxide and fzf"
+  brew insta
+  info "Configuring zoxide"
+  modify_oneline_config 'eval "$(zoxide init zsh)"' "${ZSHRC_CONFIG_FILE}"
 }
 
 configure_macos_preferences() {
