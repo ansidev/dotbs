@@ -1,0 +1,37 @@
+#!/bin/sh
+# Run a function from ~/.zsh_functions from any shell (e.g. the coding agent's bash tool).
+#
+# Usage:
+#   ws-list [args]            # via a symlink named after the function (see install.sh)
+#   dot-zsh-fn <function> [args]
+#
+# The function name is the symlink's basename, or $1 when invoked as dot-zsh-fn.
+# Runs in a non-interactive zsh, so .zshrc is not loaded.
+
+ZSH_FUNCTIONS_FILE="${ZSH_FUNCTIONS_FILE:-${HOME}/.zsh_functions}"
+
+name=$(basename "$0")
+if [ "$name" = "dot-zsh-fn" ]; then
+  if [ $# -eq 0 ]; then
+    echo "Usage: dot-zsh-fn <function> [args...]" >&2
+    exit 2
+  fi
+  name=$1
+  shift
+fi
+
+if [ ! -r "$ZSH_FUNCTIONS_FILE" ]; then
+  echo "dot-zsh-fn: cannot read ${ZSH_FUNCTIONS_FILE}" >&2
+  exit 1
+fi
+
+exec zsh -c '
+  source "$1" || exit 1
+  fn=$2
+  shift 2
+  if ! whence -w "$fn" | grep -q ": function"; then
+    echo "dot-zsh-fn: function not found: $fn" >&2
+    exit 127
+  fi
+  "$fn" "$@"
+' dot-zsh-fn "$ZSH_FUNCTIONS_FILE" "$name" "$@"

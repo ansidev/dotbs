@@ -192,6 +192,24 @@ EOF
   modify_multiline_config "${ZSH_ALIASES_CONFIG_START_COMMENT}" "${ZSH_ALIASES_CONFIG_END_COMMENT}" "${ZSH_ALIASES_CONFIG}" "${ZSHRC_CONFIG_FILE}"
   modify_multiline_config "${ZSH_FUNCTIONS_CONFIG_START_COMMENT}" "${ZSH_FUNCTIONS_CONFIG_END_COMMENT}" "${ZSH_FUNCTIONS_CONFIG}" "${ZSHRC_CONFIG_FILE}"
   info "Finished configuring .zshrc"
+  install_zsh_function_shims
+}
+
+# Expose every function in scripts/dot_zsh_functions as a command on PATH so
+# non-zsh callers (e.g. a coding agent's bash tool) can run them.
+install_zsh_function_shims() {
+  local script_dir bin_dir fn
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/scripts"
+  bin_dir="${HOME}/.local/bin"
+
+  info "Installing zsh function shims into ${bin_dir}"
+  mkdir -p "${bin_dir}"
+  chmod +x "${script_dir}/dot-zsh-fn"
+  ln -sf "${script_dir}/dot-zsh-fn" "${bin_dir}/dot-zsh-fn"
+
+  for fn in $(sed -nE 's/^function ([A-Za-z0-9_-]+)\(\).*/\1/p' "${script_dir}/dot_zsh_functions"); do
+    ln -sf "${script_dir}/dot-zsh-fn" "${bin_dir}/${fn}"
+  done
 }
 
 install_eza() {
