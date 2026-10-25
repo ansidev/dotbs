@@ -1,5 +1,5 @@
 # Modules Registry
-MODULES := zsh eza atuin starship lazygit mise go jdk maven mvnd thrift node pnpm python rust neovim fluidvim macos
+MODULES := zsh zoxide eza atuin starship lazygit mise go jdk maven mvnd thrift node pnpm python rust neovim fluidvim macos
 
 .PHONY: all menu $(MODULES)
 
@@ -33,6 +33,8 @@ all:
 # Individual module targets
 zsh:
 	@$(INSTALL) run_module zsh
+zoxide:
+	@$(INSTALL) run_module zoxide
 eza:
 	@$(INSTALL) run_module eza
 atuin:

@@ -37,6 +37,8 @@ bindkey "^[[F"  end-of-line
 bindkey "^[[3~" delete-char
 bindkey "\t"    complete-word       # tab          | complete
 bindkey "^[[Z"  autosuggest-accept  # shift + tab  | autosuggest
+bindkey '\e[1;3D' backward-word  # Option + Left
+bindkey '\e[1;3C' forward-word   # Option + Right
 
 HISTFILE=\${HOME}/.zsh_history
 HISTSIZE=10000
@@ -54,8 +56,7 @@ BREW_PREFIX="$(brew --prefix)"
 
 if type brew &>/dev/null; then
   fpath=(\${BREW_PREFIX}/share/zsh-completions \$fpath)
-  autoload -Uz compinit
-  compinit
+  autoload -Uz compinit; compinit
 fi
 EOF
 )
@@ -70,6 +71,7 @@ alias reset-display='/Applications/RDM.app/Contents/MacOS/RDM -d 0 -w 2560 -h 14
 alias picmux="PI_TERMINAL_MUX=cmux PI_SUBAGENT_MUX=cmux pi -a '/approval-mode act'"
 alias pia="pi -a '/approval-mode act'"
 alias reload-zsh="source ${ZSHRC_CONFIG_FILE}"
+alias up-herdr="brew update && brew upgrade herdr && herdr server stop && herdr"
 EOF
 )
 
@@ -77,112 +79,7 @@ EOF
   local ZSH_FUNCTIONS_CONFIG_END_COMMENT="# ZSH_FUNCTIONS_CONFIG - END"
   local ZSH_FUNCTIONS_CONFIG=$(cat <<EOF
 # ZSH functions
-function git-log-branch() {
-  git log --graph --color=always --decorate --pretty=format:'Commit: %C(yellow)%H%C(reset) %nAuthor: %an <%ae>%nDate: %ad%nSigned by: %C(green)%GS%C(reset)%n%G?%n%n%C(green)%s%C(reset)%n%n%C(cyan)%b%C(reset)%n' "\$1" -- | sed -E 's/G$/Signature status: \x1b[32mvalid signature\x1b[0m/; s/B$/Signature status: \x1b[31mbad signature\x1b[0m/; s/U$/Signature status: \x1b[31muntrusted signature\x1b[0m/; s/X$/Signature status: \x1b[31mexpired signature\x1b[0m/; s/Y$/Signature status: \x1b[31mexpired key signature\x1b[0m/; s/R$/Signature status: \x1b[31mrevoked key signature\x1b[0m/; s/E$/Signature status: \x1b[31mcannot check signature\x1b[0m/; s/N$/Signature status: \x1b[31mno signature\x1b[0m/' | sed -E '/Signed by: \x1b\[32m\x1b\[m$/d' | less -R
-}
-
-function ws-new() {
-  local WORKSPACE_DIR="\${1:-\$PWD}"
-  herdr workspace create --cwd "\${WORKSPACE_DIR}" \${@:2}
-}
-
-function ws-list() {
-  herdr workspace list | jq -r '
-  .result.workspaces
-  | (["#", "Label", "Status", "Focused", "Panes", "Tabs", "Workspace ID"],
-     (.[] | [.number, .label, .agent_status, .focused, .pane_count, .tab_count, .workspace_id]))
-  | @tsv
-' | column -t -s $'\t'
-}
-
-function ws-open() {
-  local WORKSPACE_DIR="\${1:-\$PWD}"
-  herdr workspace create --cwd "\${WORKSPACE_DIR}" --focus
-}
-
-function ws-close() {
-  local workspace_id
-
-  workspace_id=\$(herdr workspace list |
-    jq -r --arg value "\$1" '
-      .result.workspaces[]
-      | select(.label == \$value or .workspace_id == \$value)
-      | .workspace_id
-    ')
-
-  if [[ -z "\$workspace_id" ]]; then
-    echo "Workspace not found: \$1" >&2
-    return 1
-  fi
-
-  herdr workspace close "\$workspace_id"
-}
-
-# Worktree management functions
-
-wt-dir() {
-  local BRANCH=\$1
-  git worktree list --porcelain |
-    awk -v branch="refs/heads/\$BRANCH" '
-      /^worktree / { dir= substr(\$0, 10) }
-      /^branch / && \$2 == branch { print dir }
-    '
-}
-
-function wt-delete() {
-  CURRENT_DIR=\$(basename \${PWD})
-  REPO=\${2:-"\${CURRENT_DIR}"}
-  BRANCH=\$1
-  WORKTREE_DIR=\$(wt-dir \$BRANCH)
-
-  echo "============================="
-  echo "REPO: \$REPO"
-  echo "BRANCH: \$BRANCH"
-  echo "WORKTREE_DIR: \$WORKTREE_DIR"
-  echo "============================="
-
-  if [[ -n "\${WORKTREE_DIR}" ]]; then
-    echo "Removing worktree"
-    git worktree remove --force "\${WORKTREE_DIR}" &>/dev/null || echo "Worktree \${WORKTREE_DIR} does not exist or has already been removed."
-  else
-    echo "Worktree for branch \$BRANCH does not exist. Skip deletion."
-  fi
-
-  if git show-ref --verify --quiet "refs/heads/\$BRANCH"; then
-    echo "Removing branch \$BRANCH..."
-    git branch -D "\$BRANCH"
-  else
-    echo "Branch \$BRANCH does not exist. Skip deletion."
-  fi
-
-  if [[ -n "\${WORKTREE_DIR}" ]]; then
-    echo "Removing worktree directory \$WORKTREE_DIR..."
-    rm -rf \$WORKTREE_DIR
-  else
-    echo "Worktree directory \$WORKTREE_DIR does not exist. Skip deletion."
-  fi
-
-  (echo "Closing herdr workspace \$BRANCH..." && ws-close \$1)
-  echo "Repo \${REPO} - Worktree \$BRANCH deleted."
-}
-
-function install-skill() {
-  pnpx skills add "\$1" -g \${@:2}
-}
-
-function gh-clone() {
-  local OWNER_REPO="\$1"
-  local TARGET_DIR="\${2:-\$HOME/projects/oss}"
-
-  if [[ "\$OWNER_REPO" == https://github.com/* ]]; then
-    OWNER_REPO="\${OWNER_REPO#https://github.com/}"
-  fi
-
-  local REPO="\${OWNER_REPO#*/}"
-
-  git clone https://github.com/\$OWNER_REPO \$TARGET_DIR/\$REPO
-  cd \$TARGET_DIR/\$REPO
-}
+source ${HOME}/.zsh_functions
 EOF
 )
 
@@ -191,6 +88,7 @@ EOF
   modify_multiline_config "${ZSH_BASE_CONFIG_START_COMMENT}" "${ZSH_BASE_CONFIG_END_COMMENT}" "${ZSH_BASE_CONFIG}" "${ZSHRC_CONFIG_FILE}"
   modify_multiline_config "${ZSH_ALIASES_CONFIG_START_COMMENT}" "${ZSH_ALIASES_CONFIG_END_COMMENT}" "${ZSH_ALIASES_CONFIG}" "${ZSHRC_CONFIG_FILE}"
   modify_multiline_config "${ZSH_FUNCTIONS_CONFIG_START_COMMENT}" "${ZSH_FUNCTIONS_CONFIG_END_COMMENT}" "${ZSH_FUNCTIONS_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+  cp -a ./scripts/dot_zsh_functions ${HOME}/.zsh_functions
   info "Finished configuring .zshrc"
   install_zsh_function_shims
 }
@@ -374,11 +272,33 @@ install_fluidvim() {
   modify_oneline_config "alias fvim='NVIM_APPNAME=${FLUID_VIM_CONFIG_DIR_NAME} nvim'" "${ZSHRC_CONFIG_FILE}"
 }
 
-configure_zoxide() {
+install_zoxide() {
   info "Installing zoxide and fzf"
-  brew insta
+  brew install zoxide fzf
+  local FZF_TAB_DIR=.config/fzf-tab
+  if [[ ! -d "$HOME/$FZF_TAB_DIR" ]]; then
+    info "Installing fzf-tab"
+    git clone https://github.com/Aloxaf/fzf-tab $HOME/$FZF_TAB_DIR
+  else
+    warn "fzf-tab is already installed"
+  fi
+
   info "Configuring zoxide"
-  modify_oneline_config 'eval "$(zoxide init zsh)"' "${ZSHRC_CONFIG_FILE}"
+  local ZOXIDE_CONFIG_START_COMMENT="# ZOXIDE_CONFIG - START"
+  local ZOXIDE_CONFIG_END_COMMENT="# ZOXIDE_CONFIG - END"
+  local ZOXIDE_CONFIG=$(cat <<EOF
+  source \$HOME/$FZF_TAB_DIR/fzf-tab.plugin.zsh
+  source <(zoxide init zsh)
+  # Set up fzf key bindings and fuzzy completion
+  source <(fzf --zsh)
+EOF
+)
+
+  ensure_file_exists "${ZSHRC_CONFIG_FILE}"
+
+  modify_multiline_config "${ZOXIDE_CONFIG_START_COMMENT}" "${ZOXIDE_CONFIG_END_COMMENT}" "${ZOXIDE_CONFIG}" "${ZSHRC_CONFIG_FILE}"
+
+  # modify_oneline_config 'eval "$(zoxide init zsh)"' "${ZSHRC_CONFIG_FILE}"
 }
 
 configure_macos_preferences() {
