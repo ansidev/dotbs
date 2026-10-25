@@ -273,10 +273,10 @@ function start-issue() {
     return 1
   fi
 
+  PIA_CMD="pi -a '/approval-mode auto' '/pi-permission-suite debug on' '/kp-issue-start ${ISSUE_KEY}'"
+
   if [[ -n $MODEL ]]; then
-    PIA_CMD="pia --model ${MODEL}"
-  else
-    PIA_CMD="pia"
+    PIA_CMD="${PIA_CMD} --model ${MODEL}"
   fi
 
   herdr pane run "${PANE_ID}" "${PIA_CMD}"
