@@ -273,7 +273,7 @@ function start-issue() {
     return 1
   fi
 
-  PIA_CMD="pi -a '/approval-mode auto' '/pi-permission-suite debug on' '/kp-issue-start ${ISSUE_KEY}'"
+  PIA_CMD="pi -a '/approval-mode act' '/pi-permission-suite debug on' '/kp-issue-start ${ISSUE_KEY}'"
 
   if [[ -n $MODEL ]]; then
     PIA_CMD="${PIA_CMD} --model ${MODEL}"
