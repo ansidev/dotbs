@@ -281,3 +281,43 @@ function start-issue() {
 
   herdr pane run "${PANE_ID}" "${PIA_CMD}"
 }
+
+function zx-import() {
+  local HELP_MSG="Usage: zx-import PATH"
+
+  if [[ -z ${1:-} ]]; then
+    print -r "Error: missing PATH argument" >&2
+    print -r "${HELP_MSG}" >&2
+    return 1
+  fi
+
+  if ! command -v zoxide >/dev/null 2>&1; then
+    print -r "Error: zoxide is not installed" >&2
+    return 1
+  fi
+
+  if [[ ! -e $1 ]]; then
+    print -r "Error: path does not exist: $1" >&2
+    return 1
+  fi
+
+  if [[ ! -d $1 ]]; then
+    print -r "Error: not a directory: $1" >&2
+    return 1
+  fi
+
+  local TARGET_DIR
+  TARGET_DIR=$(cd -- "$1" && pwd -P)
+
+  local DIR FAILED=false
+  for DIR in "${TARGET_DIR}"/**/*(/ND) "${TARGET_DIR}"; do
+    if ! zoxide add "${DIR}"; then
+      print -r "Error: failed to add: ${DIR}" >&2
+      FAILED=true
+    fi
+  done
+
+  if [[ $FAILED == true ]]; then
+    return 1
+  fi
+}
